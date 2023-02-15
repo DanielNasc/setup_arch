@@ -21,7 +21,7 @@ sudo pacman -S --noconfirm neofetch
 
 neofetch
 
-PACKAGES_PACMAN=("base-devel" "chromium" "neovim" "gimp" "zsh" \
+PACKAGES_PACMAN=("base-devel" "chromium" "neovim" "gimp" "zsh" "accountsservice" \
                 "curl" "inkscape" "vlc" "tmux" "qbittorrent" "github-cli" \
                 "discord" "telegram-desktop" "spotify" "zsh" "zsh-completions" \
                 "docker" "docker-compose" "noto-fonts" "noto-fonts-emoji" "noto-fonts-cjk" \
@@ -32,10 +32,10 @@ PACKAGES_PACMAN=("base-devel" "chromium" "neovim" "gimp" "zsh" \
                 "xfce4" "xfce4-goodies" "plank" "redshift" "hydra" "shotcut" \
                 "wine" "wine-mono" "wine_gecko" "winetricks" "lib32-gnutls" \
                 "steam" "llvm" "clang" "cmake" "alsa-utils"  "python-pip" \
-                "youtube-dl" "obs-studio" "sdl2" "nmap" "lutris" )
+                "youtube-dl" "obs-studio" "sdl2" "nmap" "lutris" "flatpak" )
 
 PACKAGES_YAY=( "google-chrome" "visual-studio-code-bin" "ttf-ms-win11-auto" "cc65" \
-                "heroic-games-launcher-bin" "kega-fusion" "blastem" "mesen-x-git" )
+                "heroic-games-launcher-bin" "kega-fusion" "blastem" "mesen-x-git" "onedriver" )
 
 for package in "${PACKAGES_PACMAN[@]}"; do
     echo "Installing $package with PACMAN ================================================================="
@@ -43,6 +43,8 @@ for package in "${PACKAGES_PACMAN[@]}"; do
 done
 
 # Set up git
+
+if [ -z $(git config --list | grep email) ]; then
 echo "Setting up Git"
 echo "Enter your git username"
 read GIT_USERNAME
@@ -62,13 +64,20 @@ ssh-keygen -t ed25519 -C "$GIT_EMAIL"
 # log with github-cli
 gh auth login
 
+fi
+
 # Install yay
 echo "Installing yay ================================================================="
 
-cd ~
-mkdir clones
-cd clones
-git clone https://aur.archlinux.org/yay.git && cd yay && makepkg -si
+if [ -z "$(command -V yay 2> /dev/null)" ]
+then
+	
+	cd ~
+	mkdir clones
+	cd clones
+	git clone https://aur.archlinux.org/yay.git && cd yay && makepkg -si
+
+fi
 
 for package in "${PACKAGES_YAY[@]}"; do
     echo "Installing $package with YAY ================================================================="
@@ -81,13 +90,19 @@ sudo systemctl enable docker --now
 
 # Set up fonts
 echo "Setting up fonts"
-sudo mkdir -p /usr/local/share/fonts/otf/Caskaydia
-cd /usr/local/share/fonts/otf/Caskaydia
 
-sudo wget https://github.com/ryanoasis/nerd-fonts/releases/download/v2.3.3/CascadiaCode.zip
-sudo unzip CascadiaCode.zip
-sudo rm CascadiaCode.zip
-sudo find . -type f ! -name '*.otf' -delete
+if [ ! -d /usr/local/share/fonts/otf/Caskaydia ]
+then
+
+	sudo mkdir -p /usr/local/share/fonts/otf/Caskaydia
+	cd /usr/local/share/fonts/otf/Caskaydia
+
+	sudo wget https://github.com/ryanoasis/nerd-fonts/releases/download/v2.3.3/CascadiaCode.zip
+	sudo unzip CascadiaCode.zip
+	sudo rm CascadiaCode.zip
+	sudo find . -type f ! -name '*.otf' -delete
+fi
+
 sudo fc-cache -fv
 
 cd
@@ -95,12 +110,19 @@ cd
 # Set up asdf
 echo "Setting up asdf"
 
-cd clones
-git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.11.1
-echo '. "$HOME/.asdf/asdf.sh"' >> ~/.zshrc
-echo '. "$HOME/.asdf/asdf.sh"' >> ~/.bashrc
-echo '. "$HOME/.asdf/completions/asdf.bash"' >> ~/.bashrc
-source ~/.bashrc
+if [ -z "$(command -V asdf 2> /dev/null)" ]
+then
+
+	cd clones
+	git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.11.1
+	echo '. "$HOME/.asdf/asdf.sh"' >> ~/.zshrc
+	echo '. "$HOME/.asdf/asdf.sh"' >> ~/.bashrc
+	echo '. "$HOME/.asdf/completions/asdf.bash"' >> ~/.bashrc
+
+	. "$HOME/.asdf/asdf.sh"
+	. "$HOME/.asdf/completions/asdf.bash"
+
+fi
 
 asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git
 asdf install nodejs latest
